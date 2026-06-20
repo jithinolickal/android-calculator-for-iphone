@@ -1,0 +1,8 @@
+{
+  "name": "android-calculator-for-iphone",
+  "private": true,
+  "description": "Android-style calculator PWA. App is plain static files; this manifest only wires up tests.",
+  "scripts": {
+    "test": "node --test"
+  }
+}

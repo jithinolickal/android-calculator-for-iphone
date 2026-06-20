@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#000000"/>
+  <!-- content scaled to ~64% and centered for maskable safe zone -->
+  <g transform="translate(92,92) scale(0.64)">
+    <circle cx="150" cy="150" r="44" fill="#5c5c5c"/>
+    <circle cx="256" cy="150" r="44" fill="#f5a12e"/>
+    <circle cx="362" cy="150" r="44" fill="#f5a12e"/>
+    <circle cx="150" cy="256" r="44" fill="#333333"/>
+    <circle cx="256" cy="256" r="44" fill="#333333"/>
+    <circle cx="362" cy="256" r="44" fill="#f5a12e"/>
+    <circle cx="150" cy="362" r="44" fill="#333333"/>
+    <circle cx="256" cy="362" r="44" fill="#333333"/>
+    <circle cx="362" cy="362" r="44" fill="#f5a12e"/>
+    <rect x="340" y="350" width="44" height="9" rx="4.5" fill="#000000"/>
+    <rect x="340" y="368" width="44" height="9" rx="4.5" fill="#000000"/>
+    <rect x="358" y="234" width="8" height="44" rx="4" fill="#ffffff"/>
+    <rect x="340" y="252" width="44" height="8" rx="4" fill="#ffffff"/>
+  </g>
+</svg>

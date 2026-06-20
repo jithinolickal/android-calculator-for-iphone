@@ -1,0 +1,369 @@
+/* Android Calculator for iPhone — styles
+ *
+ * Theming: each palette is just a set of CSS custom properties. :root is the Violet default;
+ * :root[data-theme="orange"] overrides them. Every color in the app references a var(), so
+ * switching themes = toggling one attribute on <html> (done in app.js). --frame-bg is the
+ * area outside the phone-shaped frame (visible only on wide desktop windows).
+ *
+ * Layout: .app is a flex column [topbar | display (flex:1) | keypad]. On desktop it's capped
+ * to a centered phone-sized frame; on mobile it fills the screen. Two notable display states
+ * add a class to .app — `.history-open` (history panel reveals above the keypad, keys compress
+ * into wide pills) and `.evaluated` (after '=', expression shrinks/greys, result grows). Both
+ * are defined as overrides further below.
+ */
+:root {
+  /* Violet (default) */
+  --frame-bg: #07071a;
+  --bg: #0f0f2e;
+  --num-bg: #2b2b4f;
+  --num-text: #e8e8fb;
+  --op-bg: #4b4ba0;
+  --op-text: #ffffff;
+  --clear-bg: #aab4ff;
+  --clear-text: #1a1a3a;
+  --equals-bg: #f5a9d6;
+  --equals-text: #2a1030;
+  --expr-text: #ececf7;
+  --result-text: #f0a0d0;
+  --icon-text: #c9c9ee;
+}
+
+:root[data-theme="orange"] {
+  --frame-bg: #000000;
+  --bg: #000000;
+  --num-bg: #333333;
+  --num-text: #ffffff;
+  --op-bg: #f5a12e;
+  --op-text: #ffffff;
+  --clear-bg: #5c5c5c;
+  --clear-text: #ffffff;
+  --equals-bg: #f5a12e;
+  --equals-text: #ffffff;
+  --expr-text: #f5f5f5;
+  --result-text: #f5a12e;
+  --icon-text: #b0b0b0;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+html, body {
+  height: 100%;
+  background: var(--frame-bg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+  overflow: hidden;
+  transition: background-color 0.3s ease; /* cross-fade on theme switch */
+}
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  max-width: 420px;
+  max-height: 900px;
+  margin: auto;
+  background: var(--bg);
+  border-radius: 24px;
+  overflow: hidden;
+  padding: env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 16px);
+  transition: background-color 0.3s ease;
+}
+
+/* Top bar */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 4px 4px;
+}
+.icon-btn {
+  background: none;
+  border: none;
+  color: var(--icon-text);
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.icon-btn:active { background: rgba(255, 255, 255, 0.08); }
+
+/* Display */
+.display {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-end;
+  padding: 12px 8px 6px;
+  overflow: hidden;
+}
+.expression {
+  flex: 0 0 auto;
+  width: 100%;
+  text-align: right;
+  color: var(--expr-text);
+  font-size: clamp(34px, 10vw, 50px);
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  padding: 4px 0;
+  /* animates the shrink/grey on '=' and the color fade on theme switch */
+  transition: font-size 0.22s ease, color 0.22s ease, opacity 0.22s ease;
+}
+.expression::-webkit-scrollbar { display: none; }
+.result {
+  flex: 0 0 auto;
+  width: 100%;
+  text-align: right;
+  color: var(--result-text);
+  font-size: clamp(18px, 5.5vw, 26px);
+  font-weight: 400;
+  min-height: 30px;
+  margin-top: 8px;
+  white-space: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  transition: font-size 0.22s ease, color 0.22s ease; /* grows into the big result on '=' */
+}
+.result::-webkit-scrollbar { display: none; }
+.expand-handle {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: var(--icon-text);
+  opacity: 0.7;
+  margin-top: 8px;
+  width: 32px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+/* Keypad */
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  padding: 10px 0 0;
+}
+.key {
+  aspect-ratio: 1 / 1;
+  border: none;
+  border-radius: 50%;
+  font-size: clamp(22px, 7vw, 30px);
+  font-weight: 400;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: filter 0.08s ease, transform 0.08s ease,
+    background-color 0.3s ease, color 0.3s ease,
+    aspect-ratio 0.28s ease, font-size 0.28s ease;
+}
+.key:active { filter: brightness(1.25); transform: scale(0.96); }
+
+/* When history is open: keep full-width keys but compress them vertically — the circle's
+   top and bottom get "cut" into a wide pill, shrinking the keypad so it shifts down.
+   Gaps stay equal (same grid gap); only key height changes. */
+.app.history-open .key {
+  aspect-ratio: 1.4 / 1;
+  font-size: clamp(20px, 6vw, 26px);
+}
+.app.history-open .expression { font-size: clamp(28px, 8vw, 40px); }
+
+/* After '=' : expression shrinks + greys on top, result shown big + bright below */
+.app.evaluated .expression {
+  font-size: clamp(18px, 5.5vw, 26px);
+  color: var(--icon-text);
+  opacity: 0.55;
+}
+.app.evaluated .result {
+  font-size: clamp(34px, 10vw, 50px);
+  color: var(--expr-text);
+  margin-top: 4px;
+}
+
+.key-num { background: var(--num-bg); color: var(--num-text); }
+.key-op { background: var(--op-bg); color: var(--op-text); }
+.key-clear { background: var(--clear-bg); color: var(--clear-text); }
+.key-equals { background: var(--equals-bg); color: var(--equals-text); }
+.key-back svg { stroke: var(--num-text); }
+
+/* History — revealed in the display area, above the current expression */
+/* Collapsed by default (takes no space, invisible); the .history-open class on .app expands
+   it. flex-grow + opacity animate, so the panel slides open/closed. */
+.history-region {
+  flex: 0 1 0;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  opacity: 0;
+  transition: flex-grow 0.28s ease, opacity 0.22s ease;
+}
+.app.history-open .history-region { flex-grow: 1; opacity: 1; }
+.history-today {
+  color: var(--icon-text);
+  opacity: 0.7;
+  font-size: 13px;
+  padding: 2px 4px 6px;
+}
+.history-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 14px;
+  padding: 4px 4px 0;
+  scrollbar-width: none;
+}
+.history-list::-webkit-scrollbar { display: none; }
+.history-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  cursor: pointer;
+}
+.history-item .h-expr { color: #7d7da6; font-size: 19px; white-space: nowrap; }
+.history-item .h-result { color: #adadcf; font-size: 26px; margin-top: 2px; white-space: nowrap; }
+.history-empty { color: var(--icon-text); opacity: 0.4; text-align: center; margin: auto; font-size: 15px; }
+
+/* Drag handle separating history from the current expression */
+.drag-handle {
+  flex: 0 0 auto;
+  align-self: center;
+  background: none;
+  border: none;
+  width: 60px;
+  max-height: 0;
+  margin: 0;
+  overflow: hidden;
+  opacity: 0;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: max-height 0.28s ease, opacity 0.22s ease, margin 0.28s ease;
+}
+.app.history-open .drag-handle { max-height: 22px; opacity: 1; margin: 4px 0 2px; }
+.drag-handle::before {
+  content: "";
+  width: 34px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--icon-text);
+  opacity: 0.6;
+}
+.current-label {
+  flex: 0 0 auto;
+  width: 100%;
+  text-align: left;
+  color: var(--icon-text);
+  opacity: 0;
+  font-size: 13px;
+  max-height: 0;
+  padding: 0 4px;
+  overflow: hidden;
+  transition: max-height 0.28s ease, opacity 0.22s ease, padding 0.28s ease;
+}
+.app.history-open .current-label { max-height: 24px; opacity: 0.7; padding: 0 4px 2px; }
+/* History icon highlighted while the panel is open */
+.icon-btn.history-active {
+  background: var(--op-bg);
+  color: #fff;
+}
+/* Toast */
+.toast {
+  position: absolute;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom) + 24px);
+  transform: translate(-50%, 12px);
+  background: #2b2b4f;
+  color: var(--expr-text);
+  font-size: 14px;
+  padding: 12px 20px;
+  border-radius: 22px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 20;
+  white-space: nowrap;
+}
+.toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* Overflow menu (⋮) */
+.menu {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 56px);
+  right: 14px;
+  min-width: 184px;
+  background: #1d1d33;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  padding: 8px;
+  z-index: 30;
+}
+:root[data-theme="orange"] .menu { background: #1f1f1f; }
+.menu-title {
+  color: var(--icon-text);
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 8px 10px 6px;
+}
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--expr-text);
+  font-size: 15px;
+  padding: 11px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.menu-item:active { background: rgba(255, 255, 255, 0.08); }
+.menu-item .swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+.swatch-violet { background: linear-gradient(135deg, #aab4ff 0%, #4b4ba0 55%, #f5a9d6 100%); }
+.swatch-orange { background: linear-gradient(135deg, #5c5c5c 0%, #333333 50%, #f5a12e 100%); }
+.menu-item .check {
+  margin-left: auto;
+  color: var(--result-text);
+  font-size: 15px;
+  opacity: 0;
+}
+.menu-item.active .check { opacity: 1; }
+
+[hidden] { display: none !important; }

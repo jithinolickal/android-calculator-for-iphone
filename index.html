@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="orange">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+  <!-- Lock everything to same-origin. The app loads no third-party/inline scripts or styles,
+       so this is safe and blocks injected external resources (defense in depth). -->
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; manifest-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'" />
+  <title>Calculator</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#000000" />
+
+  <!-- iOS standalone (Add to Home Screen) -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Calculator" />
+  <link rel="apple-touch-icon" href="icons/icon-180.png" />
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- Top bar -->
+    <header class="topbar">
+      <button id="historyToggle" class="icon-btn" aria-label="History">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 3v5h5" />
+          <path d="M3.05 13A9 9 0 1 0 6 5.3L3 8" />
+          <path d="M12 7v5l3 2" />
+        </svg>
+      </button>
+      <button class="icon-btn" aria-label="More" id="menuBtn">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+          <circle cx="12" cy="5" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="12" cy="19" r="1.6" />
+        </svg>
+      </button>
+    </header>
+
+    <!-- Overflow menu -->
+    <div id="menu" class="menu" hidden>
+      <div class="menu-title">Color theme</div>
+      <button class="menu-item" data-theme="violet">
+        <span class="swatch swatch-violet"></span>Violet
+        <span class="check">✓</span>
+      </button>
+      <button class="menu-item" data-theme="orange">
+        <span class="swatch swatch-orange"></span>Orange
+        <span class="check">✓</span>
+      </button>
+    </div>
+
+    <!-- Display -->
+    <section class="display">
+      <!-- History (revealed above the current expression, not full screen) -->
+      <div id="historyRegion" class="history-region">
+        <div class="history-today">Today</div>
+        <div id="historyList" class="history-list"></div>
+      </div>
+      <button id="dragHandle" class="drag-handle" aria-label="Close history"></button>
+
+      <div id="currentLabel" class="current-label">Current expression</div>
+      <div id="expression" class="expression" aria-live="polite"></div>
+      <div id="result" class="result"></div>
+      <button id="expandHandle" class="expand-handle" aria-label="Scientific calculator">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 9l4-4 4 4" /><path d="M8 15l4 4 4-4" />
+        </svg>
+      </button>
+    </section>
+
+    <!-- Keypad -->
+    <section class="keypad">
+      <button class="key key-clear" data-action="clear">AC</button>
+      <button class="key key-op" data-action="paren">( )</button>
+      <button class="key key-op" data-value="%">%</button>
+      <button class="key key-op" data-value="÷">÷</button>
+
+      <button class="key key-num" data-value="7">7</button>
+      <button class="key key-num" data-value="8">8</button>
+      <button class="key key-num" data-value="9">9</button>
+      <button class="key key-op" data-value="×">×</button>
+
+      <button class="key key-num" data-value="4">4</button>
+      <button class="key key-num" data-value="5">5</button>
+      <button class="key key-num" data-value="6">6</button>
+      <button class="key key-op" data-value="−">−</button>
+
+      <button class="key key-num" data-value="1">1</button>
+      <button class="key key-num" data-value="2">2</button>
+      <button class="key key-num" data-value="3">3</button>
+      <button class="key key-op" data-value="+">+</button>
+
+      <button class="key key-num" data-value="0">0</button>
+      <button class="key key-num" data-value=".">.</button>
+      <button class="key key-num key-back" data-action="backspace" aria-label="Backspace">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 5H8.5a2 2 0 0 0-1.5.7L2.8 11a1.5 1.5 0 0 0 0 2l4.2 5.3a2 2 0 0 0 1.5.7H21a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z" />
+          <path d="M17 9l-5 6M12 9l5 6" />
+        </svg>
+      </button>
+      <button class="key key-equals" data-action="equals">=</button>
+    </section>
+
+  </div>
+
+  <script src="calc.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

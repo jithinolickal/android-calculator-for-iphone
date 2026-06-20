@@ -1,0 +1,6 @@
+# macOS
+.DS_Store
+
+# Node (only used for the test runner; no deps, but just in case)
+node_modules/
+npm-debug.log*
