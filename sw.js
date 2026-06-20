@@ -3,7 +3,7 @@
 // Strategy auto-selects by host (no manual toggling, no params):
 //   • Dev  (localhost / 127.0.0.1) → NETWORK-FIRST: always fetch latest, fall back to cache.
 //   • Prod (e.g. github.io)        → CACHE-FIRST:   instant load + full offline.
-const CACHE = "calc-v7";
+const CACHE = "calc-v8";
 const DEV = ["localhost", "127.0.0.1"].includes(self.location.hostname);
 
 const ASSETS = [

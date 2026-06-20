@@ -64,6 +64,10 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  /* Dynamic viewport height: matches the actually-visible area, so there's no blank gap
+     where Safari's bottom toolbar sits (and equals full screen when installed standalone).
+     `height: 100%` above is the fallback for browsers without dvh. */
+  height: 100dvh;
 }
 
 .app {
@@ -371,5 +375,14 @@ body {
   opacity: 0;
 }
 .menu-item.active .check { opacity: 1; }
+.menu-version {
+  text-align: center;
+  color: var(--icon-text);
+  opacity: 0.5;
+  font-size: 12px;
+  padding: 10px 0 4px;
+  margin-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
 
 [hidden] { display: none !important; }
