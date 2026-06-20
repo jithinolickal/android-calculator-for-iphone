@@ -128,29 +128,39 @@ function showToast(message) {
 // Pitch varies a little by key type for a pleasant, iOS-like feel. Toggle in the menu.
 let soundEnabled = localStorage.getItem("calc_sound") !== "off"; // default on
 let audioCtx;
-function playClick(freq) {
-  if (!soundEnabled) return;
+// Create/resume the context. Warmed up on first interaction so the first click isn't clipped.
+function ensureAudio() {
   try {
     audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === "suspended") audioCtx.resume(); // iOS: unlock on user gesture
-    const t = audioCtx.currentTime;
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = "sine";
-    osc.frequency.value = freq || 175;
+    if (audioCtx.state === "suspended") audioCtx.resume(); // iOS unlocks audio on a user gesture
+  } catch (e) { audioCtx = null; }
+  return audioCtx;
+}
+window.addEventListener("pointerdown", ensureAudio, { once: true });
+
+function playClick(freq) {
+  if (!soundEnabled) return;
+  const ctx = ensureAudio();
+  if (!ctx) return;
+  try {
+    const t = ctx.currentTime + 0.001;       // small lookahead avoids glitches/dropped clicks
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "triangle";
+    osc.frequency.value = freq || 600;
     gain.gain.setValueAtTime(0.0001, t);
-    gain.gain.exponentialRampToValueAtTime(0.14, t + 0.005);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
-    osc.connect(gain).connect(audioCtx.destination);
+    gain.gain.exponentialRampToValueAtTime(0.11, t + 0.004); // fast attack
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.045); // short decay → crisp tick
+    osc.connect(gain).connect(ctx.destination);
     osc.start(t);
-    osc.stop(t + 0.08);
+    osc.stop(t + 0.06);
   } catch (e) {}
 }
 function keyFreq(btn) {
-  if (btn.dataset.action === "equals") return 130;
-  if (btn.classList.contains("key-clear")) return 210;
-  if (btn.classList.contains("key-op")) return 150;
-  return 175; // numbers, dot, backspace
+  if (btn.dataset.action === "equals") return 760;
+  if (btn.classList.contains("key-clear")) return 700;
+  if (btn.classList.contains("key-op")) return 520;
+  return 600; // numbers, dot, backspace
 }
 
 // ---------- Events ----------
@@ -203,7 +213,7 @@ function toggleSound() {
   soundEnabled = !soundEnabled;
   try { localStorage.setItem("calc_sound", soundEnabled ? "on" : "off"); } catch {}
   updateSoundUI();
-  if (soundEnabled) playClick(175); // play a confirmation tick when turning on
+  if (soundEnabled) playClick(600); // play a confirmation tick when turning on
 }
 updateSoundUI();
 
