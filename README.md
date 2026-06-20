@@ -15,6 +15,7 @@ intelligent parentheses included. No App Store, no Xcode, no build step.
 
 <p align="center">
   <a href="https://jithinolickal.github.io/android-calculator-for-iphone/"><img src="https://img.shields.io/badge/live-demo-orange.svg" alt="Live demo" /></a>
+  <a href="https://github.com/jithinolickal/android-calculator-for-iphone/actions/workflows/test.yml"><img src="https://github.com/jithinolickal/android-calculator-for-iphone/actions/workflows/test.yml/badge.svg" alt="Tests" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="MIT License" /></a>
   <img src="https://img.shields.io/badge/PWA-installable-5a5ac0.svg" alt="PWA" />
   <img src="https://img.shields.io/badge/dependencies-0-brightgreen.svg" alt="Zero dependencies" />
