@@ -198,7 +198,8 @@ function applyTheme(theme) {
   if (theme === "orange") document.documentElement.setAttribute("data-theme", "orange");
   else { theme = "violet"; document.documentElement.removeAttribute("data-theme"); }
   try { localStorage.setItem("calc_theme", theme); } catch {}
-  menu.querySelectorAll(".menu-item").forEach((el) =>
+  // Only the theme rows — NOT every .menu-item, or this would clear the sound toggle's tick.
+  menu.querySelectorAll(".menu-item[data-theme]").forEach((el) =>
     el.classList.toggle("active", el.dataset.theme === theme)
   );
   // Keep the status-bar color in sync with the current background.
