@@ -6,7 +6,7 @@
 // up a new service worker. The cache is only a fallback for offline use.
 //
 // Bump CACHE when you want to guarantee old caches are purged on activate.
-const CACHE = "calc-v9";
+const CACHE = "calc-v10";
 
 const ASSETS = [
   ".",
