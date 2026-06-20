@@ -9,6 +9,12 @@ intelligent parentheses included. No App Store, no Xcode, no build step.
 </p>
 
 <p align="center">
+  <strong>▶ Live app:</strong>
+  <a href="https://jithinolickal.github.io/android-calculator-for-iphone/">jithinolickal.github.io/android-calculator-for-iphone</a>
+</p>
+
+<p align="center">
+  <a href="https://jithinolickal.github.io/android-calculator-for-iphone/"><img src="https://img.shields.io/badge/live-demo-orange.svg" alt="Live demo" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="MIT License" /></a>
   <img src="https://img.shields.io/badge/PWA-installable-5a5ac0.svg" alt="PWA" />
   <img src="https://img.shields.io/badge/dependencies-0-brightgreen.svg" alt="Zero dependencies" />
