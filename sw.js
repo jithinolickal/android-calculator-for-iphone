@@ -1,10 +1,12 @@
-// Service worker — caches the app shell for offline use.
+// Service worker — offline support with a network-first strategy.
 //
-// Strategy auto-selects by host (no manual toggling, no params):
-//   • Dev  (localhost / 127.0.0.1) → NETWORK-FIRST: always fetch latest, fall back to cache.
-//   • Prod (e.g. github.io)        → CACHE-FIRST:   instant load + full offline.
-const CACHE = "calc-v8";
-const DEV = ["localhost", "127.0.0.1"].includes(self.location.hostname);
+// Network-first: when online, always fetch the latest file and refresh the cache; when
+// offline, fall back to the cached copy. This means updates appear on the next launch with
+// no cache-busting dance — important because iOS standalone PWAs are unreliable at picking
+// up a new service worker. The cache is only a fallback for offline use.
+//
+// Bump CACHE when you want to guarantee old caches are purged on activate.
+const CACHE = "calc-v9";
 
 const ASSETS = [
   ".",
@@ -31,21 +33,15 @@ self.addEventListener("activate", (e) => {
   );
 });
 
-function fromNetwork(request) {
-  return fetch(request).then((res) => {
-    const copy = res.clone();
-    caches.open(CACHE).then((c) => c.put(request, copy)).catch(() => {});
-    return res;
-  });
-}
-
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
-  if (DEV) {
-    // network-first
-    e.respondWith(fromNetwork(e.request).catch(() => caches.match(e.request)));
-  } else {
-    // cache-first
-    e.respondWith(caches.match(e.request).then((cached) => cached || fromNetwork(e.request).catch(() => cached)));
-  }
+  e.respondWith(
+    fetch(e.request)
+      .then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
+        return res;
+      })
+      .catch(() => caches.match(e.request))
+  );
 });

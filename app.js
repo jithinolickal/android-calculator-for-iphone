@@ -197,7 +197,16 @@ window.addEventListener("keydown", (e) => {
 // ---------- PWA service worker ----------
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js").catch(() => {});
+    const hadController = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.register("sw.js").then((reg) => reg.update()).catch(() => {});
+    // When a new worker takes over an already-controlled page, reload once to apply the
+    // update (skips the very first install, which has no prior controller).
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (reloaded || !hadController) return;
+      reloaded = true;
+      location.reload();
+    });
   });
 }
 
