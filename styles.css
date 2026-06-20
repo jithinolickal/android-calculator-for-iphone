@@ -365,6 +365,8 @@ body {
   opacity: 0;
 }
 .menu-item.active .check { opacity: 1; }
+.menu-title-sound { margin-top: 6px; }
+.menu-item .menu-ic { width: 18px; height: 18px; flex: 0 0 auto; }
 .menu-version {
   text-align: center;
   color: var(--icon-text);

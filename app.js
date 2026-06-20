@@ -123,10 +123,41 @@ function showToast(message) {
   toastTimer = setTimeout(() => toast.classList.remove("show"), 1800);
 }
 
+// ---------- Key click sound ----------
+// Generated with the Web Audio API (no audio files): a short sine "tick" with a fast decay.
+// Pitch varies a little by key type for a pleasant, iOS-like feel. Toggle in the menu.
+let soundEnabled = localStorage.getItem("calc_sound") !== "off"; // default on
+let audioCtx;
+function playClick(freq) {
+  if (!soundEnabled) return;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume(); // iOS: unlock on user gesture
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = freq || 175;
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.14, t + 0.005);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(t);
+    osc.stop(t + 0.08);
+  } catch (e) {}
+}
+function keyFreq(btn) {
+  if (btn.dataset.action === "equals") return 130;
+  if (btn.classList.contains("key-clear")) return 210;
+  if (btn.classList.contains("key-op")) return 150;
+  return 175; // numbers, dot, backspace
+}
+
 // ---------- Events ----------
 keypad.addEventListener("click", (e) => {
   const btn = e.target.closest(".key");
   if (!btn) return;
+  playClick(keyFreq(btn));
   const action = btn.dataset.action;
   const value = btn.dataset.value;
 
@@ -165,12 +196,23 @@ function applyTheme(theme) {
   if (themeMeta && bg) themeMeta.setAttribute("content", bg);
 }
 
+// Sound toggle (in the menu)
+const soundToggle = document.getElementById("soundToggle");
+function updateSoundUI() { soundToggle.classList.toggle("active", soundEnabled); }
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  try { localStorage.setItem("calc_sound", soundEnabled ? "on" : "off"); } catch {}
+  updateSoundUI();
+  if (soundEnabled) playClick(175); // play a confirmation tick when turning on
+}
+updateSoundUI();
+
 menuBtn.addEventListener("click", (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; });
 menu.addEventListener("click", (e) => {
   const item = e.target.closest(".menu-item");
   if (!item) return;
-  applyTheme(item.dataset.theme);
-  menu.hidden = true;
+  if (item.dataset.theme) { applyTheme(item.dataset.theme); menu.hidden = true; }
+  else if (item.id === "soundToggle") toggleSound(); // keep menu open
 });
 document.addEventListener("click", (e) => {
   if (!menu.hidden && !menu.contains(e.target) && !menuBtn.contains(e.target)) menu.hidden = true;
@@ -181,6 +223,9 @@ applyTheme(localStorage.getItem("calc_theme") || "orange");
 // Physical keyboard support (desktop testing)
 window.addEventListener("keydown", (e) => {
   const k = e.key;
+  if (/[0-9.]/.test(k) || ["+", "-", "*", "/", "%", "(", ")", "Enter", "=", "Backspace", "Escape"].includes(k)) {
+    playClick();
+  }
   if (/[0-9]/.test(k)) commit(inputValue(state, k));
   else if (k === ".") commit(inputValue(state, "."));
   else if (k === "+") commit(inputValue(state, "+"));
