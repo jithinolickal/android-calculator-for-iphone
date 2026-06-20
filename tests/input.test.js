@@ -59,6 +59,13 @@ test("intelligent parens: close when there is an unclosed paren after a value", 
   assert.equal(type(["(", "1", "+", "2", ")"]).expr, "(1+2)");
 });
 
+test("implied × when a number follows % or )", () => {
+  assert.equal(type(["5", "0", "%", "2", "0"]).expr, "50%×20");
+  assert.equal(C.equals(type(["5", "0", "%", "2", "0"])).lastResult, "10");
+  assert.equal(type(["(", "1", "+", "2", ")", "3"]).expr, "(1+2)×3");
+  assert.equal(C.equals(type(["(", "1", "+", "2", ")", "3"])).lastResult, "9");
+});
+
 test("backspace removes the last character; AC clears", () => {
   assert.equal(C.backspace(type(["1", "2", "+"])).expr, "12");
   assert.equal(C.clearAll(type(["1", "2", "+", "3"])).expr, "");

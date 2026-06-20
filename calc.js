@@ -135,7 +135,7 @@ function getPreview(raw) {
 // ---------- State transforms (pure) ----------
 const makeState = () => ({ expr: "", evaluated: false, lastResult: "", error: null });
 
-// Type a digit, dot, or operator glyph.
+// Type a digit, dot, percent, or operator glyph.
 function inputValue(state, v) {
   let { expr, evaluated, lastResult } = state;
   if (evaluated) {
@@ -143,7 +143,7 @@ function inputValue(state, v) {
     expr = (isOperator(v) || v === "%") ? lastResult : "";
     evaluated = false;
   }
-  const last = expr.slice(-1);
+  let last = expr.slice(-1);
 
   if (isOperator(v)) {
     if (expr === "" && v !== "−") return { expr, evaluated, lastResult, error: null }; // only − can lead
@@ -151,9 +151,13 @@ function inputValue(state, v) {
     expr += v;
   } else if (v === ".") {
     if (/\.\d*$/.test(trailingNumber(expr))) return { expr, evaluated, lastResult, error: null }; // one dot/number
-    if (expr === "" || isOperator(last) || last === "(") expr += "0";                              // .5 → 0.5
+    if (/[)%]/.test(last)) { expr += "×"; last = "×"; }              // implied multiply: 50%. → 50%×0.
+    if (expr === "" || isOperator(last) || last === "(") expr += "0"; // .5 → 0.5
     expr += ".";
   } else {
+    // digit (0-9) or '%'. A number right after ')' or '%' implies multiplication,
+    // so 50%20 → 50%×20 (= 10) and (1+2)3 → (1+2)×3, instead of erroring.
+    if (/[0-9]/.test(v) && /[)%]/.test(last)) expr += "×";
     expr += v;
   }
   return { expr, evaluated, lastResult, error: null };
