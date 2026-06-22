@@ -64,6 +64,14 @@ function addHistory(expression, result) {
   saveHistory();
   renderHistory();
 }
+function clearHistory() {
+  if (history.length === 0) { showToast("No history to clear"); return; }
+  history = [];
+  saveHistory();
+  renderHistory();
+  closeHistory();
+  showToast("History cleared");
+}
 function renderHistory() {
   historyList.innerHTML = "";
   if (history.length === 0) {
@@ -228,6 +236,7 @@ menu.addEventListener("click", (e) => {
   if (!item) return;
   if (item.dataset.theme) { applyTheme(item.dataset.theme); menu.hidden = true; }
   else if (item.id === "soundToggle") toggleSound(); // keep menu open
+  else if (item.id === "clearHistory") { clearHistory(); menu.hidden = true; }
 });
 document.addEventListener("click", (e) => {
   if (!menu.hidden && !menu.contains(e.target) && !menuBtn.contains(e.target)) menu.hidden = true;

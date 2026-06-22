@@ -116,6 +116,7 @@ is pushed to history.
   bottom on open, so the most recent entries are visible without scrolling.
 - Tapping an entry inserts its result into the current expression (with an implied `×` when it
   follows a number/`)`/`%`).
+- **Clear history** — available in the ⋮ menu; empties the list and shows a confirmation toast.
 
 ## Themes
 
