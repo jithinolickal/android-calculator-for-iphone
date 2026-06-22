@@ -91,6 +91,8 @@ function renderHistory() {
     });
     historyList.appendChild(item);
   });
+  // Newest is at the bottom — scroll there so the latest entries show without scrolling up.
+  historyList.scrollTop = historyList.scrollHeight;
 }
 // Open/close are driven by the .history-open class on .app — CSS animates the panel sliding
 // in/out (see styles.css). The region/handle/label stay in the DOM, just collapsed when closed.
@@ -98,6 +100,8 @@ function openHistory() {
   renderHistory();
   historyBtn.classList.add("history-active");
   appEl.classList.add("history-open");
+  // Re-pin to the bottom after the open animation lays the panel out.
+  requestAnimationFrame(() => { historyList.scrollTop = historyList.scrollHeight; });
 }
 function closeHistory() {
   historyBtn.classList.remove("history-active");

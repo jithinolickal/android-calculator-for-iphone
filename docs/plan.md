@@ -12,14 +12,21 @@ as a web app that installs and runs like a native app on iOS.
 
 ## Scope
 
-### v1 (now)
+### v1 — shipped ✅
 - Standard keypad: digits, `+ − × ÷`, `=`, `AC`, backspace, `%`, `.`
 - **Intelligent parentheses** — one `( )` key that decides whether to insert `(` or `)`
-  from context, and auto-inserts `×` (so `16` then `(` becomes `16×(` like the reference)
+  from context, and auto-inserts `×` (so `16` then `(` becomes `16×(` like the reference).
+  Also inserts an implied `×` when a number follows `%` or `)` (so `50%20` = `10`).
 - **Real-time result** — the answer updates live below the expression as you type
-- **History** — a panel of past calculations; tap an entry to reuse its result
-- Dark theme matching the reference screenshot (Material You purple/pink palette)
-- Installable + offline (PWA manifest + service worker)
+- **iOS-style result view** — after `=`, the expression shrinks/greys on top and the result
+  grows below
+- **History** — a panel that slides over the keypad; oldest at top, newest at the bottom
+  (auto-scrolled into view); tap an entry to reuse its result; persisted in localStorage
+- **Two themes** — Orange (default) and Violet, switchable from the ⋮ menu and remembered
+- **Key click sounds** — soft Web Audio tick per press, toggle in the ⋮ menu
+- Smooth CSS transitions (theme cross-fade, `=` swap, history slide)
+- Installable + offline (PWA manifest + network-first service worker)
+- Unit tests for the calculator core (`calc.js`) + CI on every push
 
 ### v2 — percentage fix
 - Android-style *contextual* percentage: `100 + 10%` = `110`, `100 − 10%` = `90`,
@@ -29,8 +36,11 @@ as a web app that installs and runs like a native app on iOS.
 ### v3 — extras
 - Scientific panel (sin/cos/log, `^`, `√`, `π`, `e`)
 - Light theme + system-aware switching
-- Haptic feedback on key press
 - True decimal precision via `decimal.js` (fix `0.1 + 0.2`)
+- One-time "Add to Home Screen" hint for iOS Safari (iOS has no auto install prompt)
+
+> Haptics were considered but dropped: the Web Vibration API is unsupported on iOS (Safari
+> and all iOS browsers run WebKit). Key-click **sound** ships in v1 as the substitute.
 
 ## Tech Stack
 
@@ -99,21 +109,25 @@ is pushed to history.
 
 ## History
 
-- In-memory list of `{ expression, result }`, persisted to `localStorage`.
-- Opened via the history icon (top-left) or the expand chevron under the display.
-- Tapping an entry inserts its result into the current expression.
-- A "Clear" action empties the list.
+- List of `{ expression, result }`, persisted to `localStorage` (capped at 100, per-device).
+- Opened via the history icon (top-left); it slides in over the keypad, which compresses to
+  make room. The drag handle (or the icon again) closes it.
+- **Ordering:** oldest at the top, **newest at the bottom** — and the panel auto-scrolls to the
+  bottom on open, so the most recent entries are visible without scrolling.
+- Tapping an entry inserts its result into the current expression (with an implied `×` when it
+  follows a number/`)`/`%`).
 
-## Theme (reference palette)
+## Themes
 
-| Token | Use | Color |
-|---|---|---|
-| Background | app | very dark indigo `#0f0f2e` |
-| Number keys | `0–9 . ⌫` | dark indigo `#2b2b4f` |
-| Operator keys | `÷ × − + ( ) %` | purple `#4b4ba0` |
-| Clear key | `AC` | light periwinkle `#aab4ff` (dark text) |
-| Equals key | `=` | pink `#f5a9d6` (dark text) |
-| Result preview | live answer | pink `#f0a0d0` |
+Two palettes, switchable from the ⋮ menu and remembered in `localStorage`. Each is a set of CSS
+custom properties; switching toggles a `data-theme` attribute on `<html>`. **Orange is the
+default.**
+
+**Orange** (default) — black background, dark-grey number keys, medium-grey `AC`, orange
+operators/`=`, white text, orange result preview.
+
+**Violet** — dark-indigo background `#0f0f2e`, indigo number keys `#2b2b4f`, purple operators
+`#4b4ba0`, periwinkle `AC` `#aab4ff`, pink `=` `#f5a9d6`, pink result preview.
 
 Keys are circular (`aspect-ratio: 1`), laid out in a 4-column grid.
 

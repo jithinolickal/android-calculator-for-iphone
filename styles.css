@@ -234,7 +234,8 @@ body {
   flex: 1;
   overflow-y: auto;
   display: flex;
-  flex-direction: column-reverse;
+  flex-direction: column;     /* oldest at top, newest at bottom */
+  justify-content: flex-end;  /* keep items pinned to the bottom (next to the current expr) */
   gap: 14px;
   padding: 4px 4px 0;
   scrollbar-width: none;
