@@ -132,6 +132,17 @@ function getPreview(raw) {
   }
 }
 
+// Insert thousands separators into the integer part of every number in a display string.
+// Display-only: it's applied when painting expr/result/history, never to the evaluable
+// expression. Leaves decimals, operators, parens, and compact exponential notation alone.
+function groupThousands(display) {
+  if (display.includes("e")) return display; // exponential result — don't touch
+  return display.replace(/\d+/g, (run, offset) => {
+    if (display[offset - 1] === ".") return run; // fractional part — don't group
+    return run.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  });
+}
+
 // ---------- State transforms (pure) ----------
 const makeState = () => ({ expr: "", evaluated: false, lastResult: "", error: null });
 
@@ -221,7 +232,7 @@ function appendResult(state, value) {
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     OPERATORS, isOperator, countChar, unclosedParens, trailingNumber,
-    evaluate, formatNumber, normalizeForEval, getPreview,
+    evaluate, formatNumber, normalizeForEval, getPreview, groupThousands,
     makeState, inputValue, inputParen, backspace, clearAll, equals, appendResult,
   };
 }

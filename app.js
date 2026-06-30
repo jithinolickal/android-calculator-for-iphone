@@ -30,7 +30,7 @@ function commit(next) {
 
 // ---------- Rendering ----------
 function render() {
-  exprEl.textContent = state.expr;
+  exprEl.textContent = groupThousands(state.expr);
   exprEl.scrollLeft = exprEl.scrollWidth; // keep the newest (rightmost) part of long input in view
 
   if (state.error) {
@@ -40,11 +40,11 @@ function render() {
   }
   if (state.evaluated) {
     appEl.classList.add("evaluated"); // expr greys/shrinks on top, result shows big
-    resultEl.textContent = state.lastResult;
+    resultEl.textContent = groupThousands(state.lastResult);
     return;
   }
   appEl.classList.remove("evaluated");
-  resultEl.textContent = state.expr === "" ? "" : getPreview(state.expr);
+  resultEl.textContent = state.expr === "" ? "" : groupThousands(getPreview(state.expr));
 }
 
 // ---------- History ----------
@@ -88,10 +88,10 @@ function renderHistory() {
     // same-origin code can write, so treat it as untrusted and never parse it as HTML.
     const ex = document.createElement("div");
     ex.className = "h-expr";
-    ex.textContent = h.expression;
+    ex.textContent = groupThousands(h.expression);
     const rs = document.createElement("div");
     rs.className = "h-result";
-    rs.textContent = h.result;
+    rs.textContent = groupThousands(h.result);
     item.append(ex, rs);
     item.addEventListener("click", () => {
       commit(appendResult(state, h.result));

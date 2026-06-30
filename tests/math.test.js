@@ -102,3 +102,13 @@ test("getPreview: empty for bare numbers / nothing to compute", () => {
   assert.equal(C.getPreview("42"), ""); // no operation yet
   assert.equal(C.getPreview("7+"), ""); // strips to "7", a bare number
 });
+
+test("groupThousands: commas in integer part only", () => {
+  assert.equal(C.groupThousands("10000000"), "10,000,000");
+  assert.equal(C.groupThousands("1234567+8900"), "1,234,567+8,900");
+  assert.equal(C.groupThousands("1234.5678"), "1,234.5678"); // fractional part untouched
+  assert.equal(C.groupThousands("100"), "100");              // <4 digits unchanged
+  assert.equal(C.groupThousands("16×(0.5+2500)"), "16×(0.5+2,500)");
+  assert.equal(C.groupThousands("1.2e+30"), "1.2e+30");      // exponential left alone
+  assert.equal(C.groupThousands(""), "");
+});
