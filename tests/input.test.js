@@ -110,3 +110,53 @@ test("appendResult: inserts a history result, with implied × when needed", () =
   const done = C.equals(type(["1", "+", "1"]));                         // evaluated state
   assert.equal(C.appendResult(done, "9").expr, "9");                    // starts fresh
 });
+
+test("caret: typing inserts at the caret, not the end", () => {
+  let s = type(["1", "2", "3"]);          // expr "123", caret 3
+  s = C.setCaret(s, 1);                    // 1|23
+  s = C.inputValue(s, "9");                // 19|23
+  assert.equal(s.expr, "1923");
+  assert.equal(s.caret, 2);
+});
+
+test("caret: backspace deletes the char before the caret", () => {
+  let s = type(["1", "2", "3", "4"]);     // "1234"
+  s = C.setCaret(s, 2);                    // 12|34
+  s = C.backspace(s);                      // 1|34
+  assert.equal(s.expr, "134");
+  assert.equal(s.caret, 1);
+});
+
+test("caret: backspace at position 0 is a no-op", () => {
+  let s = C.setCaret(type(["5", "0"]), 0);
+  assert.equal(C.backspace(s).expr, "50");
+});
+
+test("caret: operator before caret is replaced, not stacked", () => {
+  let s = type(["5", "+", "3"]);          // "5+3"
+  s = C.setCaret(s, 2);                    // 5+|3
+  s = C.inputValue(s, "−");                // replaces '+' → 5−|3
+  assert.equal(s.expr, "5−3");
+  assert.equal(s.caret, 2);
+});
+
+test("setCaret: clamps to range and is a no-op once evaluated", () => {
+  let s = type(["1", "2"]);
+  assert.equal(C.setCaret(s, 99).caret, 2);
+  assert.equal(C.setCaret(s, -5).caret, 0);
+  const done = C.equals(type(["1", "+", "1"]));
+  assert.equal(C.setCaret(done, 0), done); // unchanged while evaluated
+});
+
+test("groupWithMap: maps raw indices to comma-shifted display positions", () => {
+  const { text, map } = C.groupWithMap("1234+5");
+  assert.equal(text, "1,234+5");
+  // raw:  1 2 3 4 + 5  (indices 0..6 incl. end)
+  // disp: 1 , 2 3 4 + 5
+  assert.deepEqual(map, [0, 2, 3, 4, 5, 6, 7]);
+});
+
+test("groupWithMap: leaves fractional digits and exponential alone", () => {
+  assert.equal(C.groupWithMap("1234.5678").text, "1,234.5678");
+  assert.equal(C.groupWithMap("1.2e+30").text, "1.2e+30");
+});

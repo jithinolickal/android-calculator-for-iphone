@@ -131,6 +131,18 @@ body {
   transition: font-size 0.22s ease, color 0.22s ease, opacity 0.22s ease;
 }
 .expression::-webkit-scrollbar { display: none; }
+/* Blinking text caret shown while editing (inserted between two text spans in app.js).
+   Negative margins keep it from nudging the surrounding glyphs as it appears. */
+.caret {
+  display: inline-block;
+  width: 2px;
+  height: 0.92em;
+  margin: 0 -1px;
+  vertical-align: -0.1em;
+  background: var(--result-text);
+  animation: caret-blink 1.05s steps(1) infinite;
+}
+@keyframes caret-blink { 0%, 50% { opacity: 1; } 50.01%, 100% { opacity: 0; } }
 .result {
   flex: 0 0 auto;
   width: 100%;

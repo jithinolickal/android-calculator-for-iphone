@@ -30,8 +30,7 @@ function commit(next) {
 
 // ---------- Rendering ----------
 function render() {
-  exprEl.textContent = groupThousands(state.expr);
-  exprEl.scrollLeft = exprEl.scrollWidth; // keep the newest (rightmost) part of long input in view
+  renderExpr();
 
   if (state.error) {
     appEl.classList.remove("evaluated");
@@ -46,6 +45,75 @@ function render() {
   appEl.classList.remove("evaluated");
   resultEl.textContent = state.expr === "" ? "" : groupThousands(getPreview(state.expr));
 }
+
+// Paint the expression. While evaluated/error it's plain greyed text (no caret); while
+// editing it's split around a blinking <span class="caret"> at the caret position. The
+// caret offset is taken from the raw→display map so commas don't throw it off.
+function renderExpr() {
+  if (state.evaluated || state.error) {
+    exprEl.textContent = groupThousands(state.expr);
+    exprEl.scrollLeft = exprEl.scrollWidth;
+    return;
+  }
+  const { text, map } = groupWithMap(state.expr);
+  const dc = map[state.caret];
+  exprEl.textContent = "";
+  exprEl.appendChild(document.createTextNode(text.slice(0, dc)));
+  const caretEl = document.createElement("span");
+  caretEl.className = "caret";
+  exprEl.appendChild(caretEl);
+  exprEl.appendChild(document.createTextNode(text.slice(dc)));
+  // Keep the caret in view: pin right at the end, otherwise scroll it just into the margin.
+  if (state.caret >= state.expr.length) {
+    exprEl.scrollLeft = exprEl.scrollWidth;
+  } else {
+    const cl = caretEl.offsetLeft;
+    if (cl < exprEl.scrollLeft + 8) exprEl.scrollLeft = cl - 8;
+    else if (cl > exprEl.scrollLeft + exprEl.clientWidth - 8) exprEl.scrollLeft = cl - exprEl.clientWidth + 8;
+  }
+}
+
+// Tap anywhere in the expression to drop the caret there (Android-style mid-edit).
+// caretRangeFromPoint (WebKit/iOS) gives a node+offset into the displayed text; we sum the
+// text lengths of the spans before it to get a display offset, then map it back to a raw index.
+function displayOffsetFromPoint(x, y) {
+  let node, offset;
+  if (document.caretRangeFromPoint) {
+    const range = document.caretRangeFromPoint(x, y);
+    if (!range) return null;
+    node = range.startContainer; offset = range.startOffset;
+  } else if (document.caretPositionFromPoint) {
+    const pos = document.caretPositionFromPoint(x, y);
+    if (!pos) return null;
+    node = pos.offsetNode; offset = pos.offset;
+  } else {
+    return null;
+  }
+  let acc = 0;
+  for (const child of exprEl.childNodes) {
+    if (child === node) return acc + offset;
+    acc += child.textContent.length; // the empty caret span contributes 0
+  }
+  return acc; // tapped the container / past the end
+}
+
+// Raw index whose display position is closest to the tapped offset (ties → later, so a tap
+// near a digit's right edge lands after it).
+function rawFromDisplay(map, off) {
+  let best = 0, bestD = Infinity;
+  for (let k = 0; k < map.length; k++) {
+    const d = Math.abs(map[k] - off);
+    if (d <= bestD) { bestD = d; best = k; }
+  }
+  return best;
+}
+
+exprEl.addEventListener("click", (e) => {
+  if (state.evaluated || state.error) return; // tapping a finished result doesn't position a caret
+  const off = displayOffsetFromPoint(e.clientX, e.clientY);
+  if (off == null) return;
+  commit(setCaret(state, rawFromDisplay(groupWithMap(state.expr).map, off)));
+});
 
 // ---------- History ----------
 // Persisted in localStorage (per-origin, so it survives reloads and is shared with the
@@ -261,6 +329,10 @@ window.addEventListener("keydown", (e) => {
   else if (k === "Enter" || k === "=") { e.preventDefault(); commit(equals(state)); }
   else if (k === "Backspace") commit(backspace(state));
   else if (k === "Escape") commit(clearAll(state));
+  else if (k === "ArrowLeft") { e.preventDefault(); commit(setCaret(state, state.caret - 1)); }
+  else if (k === "ArrowRight") { e.preventDefault(); commit(setCaret(state, state.caret + 1)); }
+  else if (k === "Home") { e.preventDefault(); commit(setCaret(state, 0)); }
+  else if (k === "End") { e.preventDefault(); commit(setCaret(state, state.expr.length)); }
 });
 
 // ---------- PWA service worker ----------

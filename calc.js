@@ -143,65 +143,114 @@ function groupThousands(display) {
   });
 }
 
-// ---------- State transforms (pure) ----------
-const makeState = () => ({ expr: "", evaluated: false, lastResult: "", error: null });
+// Group thousands AND return a raw→display index map, so the UI can place the caret.
+// map[k] is the display-string offset of raw char k; map has expr.length + 1 entries
+// (the last is the position just past the end). Mirrors groupThousands' rules exactly:
+// only integer runs (digits not preceded by '.') are grouped; exponential is left alone.
+function groupWithMap(expr) {
+  const map = new Array(expr.length + 1);
+  if (expr.includes("e")) {
+    for (let k = 0; k <= expr.length; k++) map[k] = k;
+    return { text: expr, map };
+  }
+  let text = "";
+  let r = 0;
+  while (r < expr.length) {
+    if (/[0-9]/.test(expr[r]) && expr[r - 1] !== ".") {
+      const start = r;
+      let run = "";
+      while (r < expr.length && /[0-9]/.test(expr[r])) run += expr[r++];
+      const grouped = run.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+      let gi = 0;
+      for (let k = 0; k < run.length; k++) {
+        while (grouped[gi] === ",") gi++;     // skip inserted separators
+        map[start + k] = text.length + gi++;
+      }
+      text += grouped;
+    } else {
+      map[r] = text.length;
+      text += expr[r++];
+    }
+  }
+  map[expr.length] = text.length;
+  return { text, map };
+}
 
-// Type a digit, dot, percent, or operator glyph.
+// ---------- State transforms (pure) ----------
+// `caret` is an index into `expr` (0..expr.length) marking the insertion point. Editing
+// happens at the caret: each transform splits expr into `before`/`after`, applies the
+// Android-style typing rules to the trailing edge of `before` (so existing end-anchored
+// rules keep working), then stitches `before + after` and parks the caret after the edit.
+const makeState = () => ({ expr: "", caret: 0, evaluated: false, lastResult: "", error: null });
+
+// Clamp and move the caret (used by tap-to-position and arrow keys). No-op while evaluated.
+function setCaret(state, pos) {
+  if (state.evaluated || state.error) return state;
+  const caret = Math.max(0, Math.min(state.expr.length, pos));
+  return { ...state, caret };
+}
+
+// Type a digit, dot, percent, or operator glyph — inserted at the caret.
 function inputValue(state, v) {
-  let { expr, evaluated, lastResult } = state;
+  let { expr, caret, evaluated, lastResult } = state;
   if (evaluated) {
     // operator/% continues from the result; a digit starts a fresh expression
     expr = (isOperator(v) || v === "%") ? lastResult : "";
     evaluated = false;
+    caret = expr.length;
   }
-  let last = expr.slice(-1);
+  let before = expr.slice(0, caret);
+  const after = expr.slice(caret);
+  let last = before.slice(-1);
+  const keep = () => ({ expr, caret, evaluated, lastResult, error: null });
 
   if (isOperator(v)) {
-    if (expr === "" && v !== "−") return { expr, evaluated, lastResult, error: null }; // only − can lead
-    if (isOperator(last)) expr = expr.slice(0, -1);                                     // replace trailing op
-    expr += v;
+    if (before === "" && v !== "−") return keep();         // only − can lead
+    if (isOperator(last)) before = before.slice(0, -1);    // replace the operator before the caret
+    before += v;
   } else if (v === ".") {
-    if (/\.\d*$/.test(trailingNumber(expr))) return { expr, evaluated, lastResult, error: null }; // one dot/number
-    if (/[)%]/.test(last)) { expr += "×"; last = "×"; }              // implied multiply: 50%. → 50%×0.
-    if (expr === "" || isOperator(last) || last === "(") expr += "0"; // .5 → 0.5
-    expr += ".";
+    if (/\.\d*$/.test(trailingNumber(before))) return keep(); // one dot per number
+    if (/[)%]/.test(last)) { before += "×"; last = "×"; }     // implied multiply: 50%. → 50%×0.
+    if (before === "" || isOperator(last) || last === "(") before += "0"; // .5 → 0.5
+    before += ".";
   } else {
     // digit (0-9) or '%'. A number right after ')' or '%' implies multiplication,
     // so 50%20 → 50%×20 (= 10) and (1+2)3 → (1+2)×3, instead of erroring.
-    if (/[0-9]/.test(v) && /[)%]/.test(last)) expr += "×";
-    expr += v;
+    if (/[0-9]/.test(v) && /[)%]/.test(last)) before += "×";
+    before += v;
   }
-  return { expr, evaluated, lastResult, error: null };
+  return { expr: before + after, caret: before.length, evaluated, lastResult, error: null };
 }
 
 // Intelligent parenthesis: choose ( vs ), auto-prepend × where it's an implied multiply.
 function inputParen(state) {
-  let expr = state.expr;
-  let evaluated = state.evaluated;
-  if (evaluated) { expr = ""; evaluated = false; }
-  const last = expr.slice(-1);
+  let { expr, caret, evaluated } = state;
+  if (evaluated) { expr = ""; evaluated = false; caret = 0; }
+  let before = expr.slice(0, caret);
+  const after = expr.slice(caret);
+  const last = before.slice(-1);
 
-  const canClose = unclosedParens(expr) > 0 && /[0-9)%]/.test(last);
+  const canClose = unclosedParens(before) > 0 && /[0-9)%]/.test(last);
   if (canClose) {
-    expr += ")";
+    before += ")";
   } else {
-    if (/[0-9)%]/.test(last)) expr += "×"; // 16 → 16×(
-    expr += "(";
+    if (/[0-9)%]/.test(last)) before += "×"; // 16 → 16×(
+    before += "(";
   }
-  return { expr, evaluated, lastResult: state.lastResult, error: null };
+  return { expr: before + after, caret: before.length, evaluated, lastResult: state.lastResult, error: null };
 }
 
 function backspace(state) {
-  let expr = state.expr;
-  let evaluated = state.evaluated;
+  let { expr, caret, evaluated } = state;
   // After '=', backspace edits the result rather than the greyed expression
-  if (evaluated) { expr = state.lastResult; evaluated = false; }
-  expr = expr.slice(0, -1);
-  return { expr, evaluated, lastResult: state.lastResult, error: null };
+  if (evaluated) { expr = state.lastResult; evaluated = false; caret = expr.length; }
+  const before = expr.slice(0, caret).slice(0, -1); // delete the char just before the caret
+  const after = expr.slice(caret);
+  return { expr: before + after, caret: before.length, evaluated, lastResult: state.lastResult, error: null };
 }
 
 function clearAll(state) {
-  return { expr: "", evaluated: false, lastResult: state.lastResult, error: null };
+  return { expr: "", caret: 0, evaluated: false, lastResult: state.lastResult, error: null };
 }
 
 function equals(state) {
@@ -210,7 +259,7 @@ function equals(state) {
   try {
     const formatted = formatNumber(evaluate(norm));
     return {
-      expr: norm, evaluated: true, lastResult: formatted, error: null,
+      expr: norm, caret: norm.length, evaluated: true, lastResult: formatted, error: null,
       committed: { expression: norm, result: formatted },
     };
   } catch (e) {
@@ -218,21 +267,22 @@ function equals(state) {
   }
 }
 
-// Insert a past result (from history) into the current expression.
+// Insert a past result (from history) into the current expression at the caret.
 function appendResult(state, value) {
-  let expr = state.expr;
-  let evaluated = state.evaluated;
-  if (evaluated) { expr = ""; evaluated = false; }
-  if (/[0-9)%]/.test(expr.slice(-1))) expr += "×";
-  expr += value;
-  return { expr, evaluated, lastResult: state.lastResult, error: null };
+  let { expr, caret, evaluated } = state;
+  if (evaluated) { expr = ""; evaluated = false; caret = 0; }
+  let before = expr.slice(0, caret);
+  const after = expr.slice(caret);
+  if (/[0-9)%]/.test(before.slice(-1))) before += "×";
+  before += value;
+  return { expr: before + after, caret: before.length, evaluated, lastResult: state.lastResult, error: null };
 }
 
 // Export for Node tests; harmless in the browser (module is undefined there).
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     OPERATORS, isOperator, countChar, unclosedParens, trailingNumber,
-    evaluate, formatNumber, normalizeForEval, getPreview, groupThousands,
-    makeState, inputValue, inputParen, backspace, clearAll, equals, appendResult,
+    evaluate, formatNumber, normalizeForEval, getPreview, groupThousands, groupWithMap,
+    makeState, setCaret, inputValue, inputParen, backspace, clearAll, equals, appendResult,
   };
 }
